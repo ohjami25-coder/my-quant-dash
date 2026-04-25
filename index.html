@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="manifest" href="manifest.json">
+
+    <title>퀀트 투자 분석 대시보드</title>
+    <style>
+        /* 기본 스타일 설정 */
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        h1 { text-align: center; color: #1a202c; margin-bottom: 30px; }
+
+        /* 메뉴 버튼 스타일 */
+        .menu-bar {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            position: sticky;
+            top: 0;
+            background: #f5f7fa;
+            padding: 10px 0;
+            z-index: 100;
+        }
+
+        .menu-bar button {
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            background-color: #fff;
+            color: #4a5568;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+        }
+
+        .menu-bar button:hover {
+            background-color: #edf2f7;
+            transform: translateY(-2px);
+        }
+
+        .menu-bar button.active {
+            background-color: #3182ce;
+            color: #fff;
+        }
+
+        /* 그리드 및 카드 디자인 */
+        #content-area {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            padding-bottom: 40px;
+        }
+
+        .stock-card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stock-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .ticker { color: #718096; font-size: 0.85rem; font-weight: 500; }
+        
+        .badge { 
+            padding: 4px 10px; 
+            border-radius: 6px; 
+            font-size: 0.75rem; 
+            font-weight: bold;
+            background: #edf2f7;
+        }
+        .badge.pattern { background: #fff5f5; color: #c53030; } /* 라운드바텀용 */
+        .badge.strong { background: #ebf8ff; color: #2b6cb0; } /* 시장강세용 */
+        .badge.safe { background: #f0fff4; color: #2f855a; }   /* 부채비율용 */
+
+        .stock-name { margin: 0 0 15px 0; font-size: 1.25rem; color: #1a202c; }
+        
+        .info-row { 
+            display: flex; 
+            justify-content: space-between; 
+            margin: 6px 0; 
+            font-size: 0.95rem; 
+        }
+        .info-label { color: #718096; }
+        .info-value { font-weight: 600; color: #2d3748; }
+
+        .card-footer { margin-top: auto; padding-top: 15px; }
+        .detail-btn {
+            width: 100%; 
+            padding: 10px;
+            border: 1px solid #e2e8f0; 
+            background: #fff; 
+            border-radius: 8px; 
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .detail-btn:hover { background: #f7fafc; color: #3182ce; border-color: #3182ce; }
+
+        /* 모바일용 스타일 (화면 너비가 600px 이하일 때) */
+        @media (max-width: 600px) {
+            #dashboard {
+                grid-template-columns: 1fr; /* 무조건 한 줄로 */
+                padding: 10px;
+                gap: 10px;
+            }
+            .stock-card h3 {
+                font-size: 1.1em; /* 글자 크기 살짝 조절 */
+            }
+        }
+        
+    </style>
+</head>
+<body>
+
+    <h1>📈 투자 전략 분석 보드</h1>
+
+    <nav class="menu-bar">
+        <button onclick="handleMenuClick(this, 'round')">🔄 라운드바텀</button>
+        <button onclick="handleMenuClick(this, 'outperform')">🔥 시장 주도주</button>
+        <button onclick="handleMenuClick(this, 'lowDebt')">💎 재무 우량주</button>
+    </nav>
+
+    <div id="content-area">
+        <p style="text-align: center; color: #a0aec0; margin-top: 50px;">상단 메뉴를 선택하여 분석 데이터를 확인하세요.</p>
+    </div>
+
+    <script type="module">
+        // 분리된 JS 파일들로부터 함수 임포트
+        import { renderRoundBottom } from './js/roundBottom.js';
+        import { renderOutperforming } from './js/outperforming.js';
+        import { renderLowDebt } from './js/lowDebt.js';
+
+        // 버튼 클릭 핸들러 및 전역 등록
+        window.handleMenuClick = (btn, type) => {
+            // 버튼 활성화 상태 표시
+            const buttons = document.querySelectorAll('.menu-bar button');
+            buttons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // 해당 카테고리 렌더링 함수 실행
+            if (type === 'round') renderRoundBottom();
+            else if (type === 'outperform') renderOutperforming();
+            else if (type === 'lowDebt') renderLowDebt();
+        };
+    </script>
+</body>
+</html>
