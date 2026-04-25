@@ -1,2 +1,2 @@
 # my-quant-dash
-Python 기반 퀀트 분석 대시보드
+> ⚠️ warn: 지금은 연습중 입니다
